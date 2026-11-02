@@ -15,9 +15,9 @@ import {pipeline} from 'node:stream/promises';
 import {createGunzip} from 'node:zlib';
 import {ZONE,PREFIX,isOwnerProfile,performBackup} from './core.js';
 initializeApp();
-const bucketName=defineString('BACKUP_BUCKET',{description:'Private Cloud Storage bucket for weekly club backups',default:'clb-vovinam-antruong-backups'});
+const bucketName=defineString('BACKUP_BUCKET',{description:'Private Cloud Storage bucket for weekly club backups',default:'clb-vovinam-antruong-2026-backups'});
 const root='clubs/antruong-v2';const region='asia-southeast1';
-const serviceAccount='weekly-clb-backup@clb-vovinam-antruong.iam.gserviceaccount.com';
+const serviceAccount='weekly-clb-backup@clb-vovinam-antruong-2026.iam.gserviceaccount.com';
 const options={region,serviceAccount,timeZone:ZONE,memory:'512MiB',timeoutSeconds:540,maxInstances:1,concurrency:1,retryCount:3,minBackoffSeconds:60};
 const db=()=>getFirestore();const bucket=()=>getStorage().bucket(bucketName.value());
 function archiveInfo(m){return {createdAt:m.metadata?.createdAt||m.timeCreated,bytes:Number(m.size||0),recordCount:m.metadata?.recordCount||'0',sha256:m.metadata?.sha256||''}}
@@ -31,7 +31,7 @@ async function saveManifest(m){await db().collection(root+'/weeklyBackups').doc(
 async function cleanup(now){const result=await rotateBackups(db(),bucket(),root,now);await db().doc(root+'/meta/weeklyBackup').set({lastCleanupAt:FieldValue.serverTimestamp(),lastCutoff:result.cutoff,retentionMonths:3},{merge:true});return result}
 export const weeklyClubBackup=onSchedule({...options,schedule:'0 2 * * 0'},async()=>{try{const manifest=await performBackup({now:new Date(),readArchive,loadSnapshot,writeArchive,saveManifest});logger.info('Weekly backup saved',{weekId:manifest.id,bytes:manifest.bytes});await cleanup(new Date())}catch(e){await db().doc(root+'/meta/weeklyBackup').set({lastFailureAt:FieldValue.serverTimestamp(),lastError:'backup_failed_check_function_logs'},{merge:true});logger.error('Weekly backup failed',{code:String(e.code||e.message||'unknown')});throw e}});
 export const cleanupClubBackups=onSchedule({...options,schedule:'30 2 * * *'},async()=>{await cleanup(new Date())});
-export const downloadWeeklyBackup=onRequest({region,serviceAccount,memory:'512MiB',timeoutSeconds:300,maxInstances:2,invoker:'public',cors:['https://khangduy1810.github.io']},async(req,res)=>{
+export const downloadWeeklyBackup=onRequest({region,serviceAccount,memory:'512MiB',timeoutSeconds:300,maxInstances:2,invoker:'public',cors:['https://vovinamantruong2026-spec.github.io']},async(req,res)=>{
  res.set('Cache-Control','private,no-store');if(req.method!=='GET'){res.status(405).json({error:'method_not_allowed'});return}
  try{const bearer=/^Bearer (.+)$/.exec(req.get('Authorization')||'');if(!bearer){res.status(401).json({error:'Vui lòng đăng nhập.'});return}let token;try{token=await getAuth().verifyIdToken(bearer[1],true)}catch{res.status(401).json({error:'Phiên đăng nhập không hợp lệ. Đăng nhập lại.'});return}
  const email=String(token.email||'').toLowerCase();if(!email){res.status(403).json({error:'Không có quyền.'});return}const profile=await db().doc(root+'/members/'+email).get();if(!isOwnerProfile(profile.data())){res.status(403).json({error:'Chỉ chủ CLB được tải bản sao.'});return}
@@ -54,7 +54,7 @@ export const cleanupClubTrash=onSchedule({region,timeZone:ZONE,memory:'256MiB',t
  })});await db().doc(root+'/meta/trashCleanup').set({...result,historyMonths:history.months,historyCutoff:history.cutoff,historyArchived:history.archived,lastRunAt:FieldValue.serverTimestamp(),lastError:''},{merge:true});logger.info('Expired trash cleanup completed',result)}catch(e){await db().doc(root+'/meta/trashCleanup').set({lastFailureAt:FieldValue.serverTimestamp(),lastError:'cleanup_failed_check_function_logs'},{merge:true});logger.error('Trash cleanup failed',{code:String(e.code||e.message||'unknown')});throw e}
 });
 
-export const backupTrashAction=onRequest({region,serviceAccount,memory:'512MiB',timeoutSeconds:540,maxInstances:2,invoker:'public',cors:['https://khangduy1810.github.io']},async(req,res)=>{
+export const backupTrashAction=onRequest({region,serviceAccount,memory:'512MiB',timeoutSeconds:540,maxInstances:2,invoker:'public',cors:['https://vovinamantruong2026-spec.github.io']},async(req,res)=>{
  res.set('Cache-Control','private,no-store');if(req.method!=='POST'){res.status(405).json({error:'method_not_allowed'});return}
  try{const bearer=/^Bearer (.+)$/.exec(req.get('Authorization')||'');if(!bearer){res.status(401).json({error:'Vui lòng đăng nhập.'});return}let token;try{token=await getAuth().verifyIdToken(bearer[1],true)}catch{res.status(401).json({error:'Phiên đăng nhập không hợp lệ.'});return}
   const email=String(token.email||'').toLowerCase(),profile=email?(await db().doc(root+'/members/'+email).get()).data():null;if(!token.email_verified||!isOwnerProfile(profile)){res.status(403).json({error:'Chỉ chủ CLB được quản lý bản sao lưu.'});return}const actor={name:profile.name||email,uid:token.uid},action=req.body?.action;

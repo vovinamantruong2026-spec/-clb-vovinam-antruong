@@ -1,6 +1,6 @@
 # CLB Vovinam An Trường
 
-Trang đang sử dụng: [Mở phiên bản v2](https://khangduy1810.github.io/clb-vovinam-antruong/v2/).
+Trang đang sử dụng: [Mở phiên bản v2](https://vovinamantruong2026-spec.github.io/-clb-vovinam-antruong/v2/).
 
 - `new-app/`: mã nguồn ứng dụng đang hoạt động.
 - `v2/`: bản chạy trên GitHub Pages.
