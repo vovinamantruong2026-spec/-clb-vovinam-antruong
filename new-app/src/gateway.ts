@@ -110,7 +110,7 @@ export async function importBackup(file:File){
  await runTransaction(db,async tx=>{const mark=await tx.get(marker);if(mark.exists()&&(mark.data().status!=='in_progress'||mark.data().hash!==hash))throw new Error('Đã nhập trước đó hoặc đang nhập file khác. Hãy chọn đúng file để tiếp tục.');if(!mark.exists())tx.set(marker,{status:'in_progress',hash,source:file.name,counts:normalized.counts,warnings:normalized.warnings,at:serverTimestamp()})});
  // Small transactions stay below Rules expression limits. A hash locks resumable imports;
  // staff access stays blocked until the final ready marker commits.
- for(let i=0;i<normalized.rows.length;i+=4){const chunk=normalized.rows.slice(i,i+4);await runTransaction(db,async tx=>{const current=await Promise.all(chunk.map(r=>tx.get(recordRef(r.kind,r.id))));chunk.forEach((r,n)=>{if(!current[n].exists())tx.set(recordRef(r.kind,r.id),{...r,version:1,updatedAt:serverTimestamp(),imported:true})})})}
+ for(let i=0;i<normalized.rows.length;i+=4){const chunk=normalized.rows.slice(i,i+4);await runTransaction(db,async tx=>{const current=await Promise.all(chunk.map(r=>tx.get(recordRef(r.kind,r.id))));const reservations=await Promise.all(chunk.map(r=>r.kind==='student'?tx.get(doc(db,path+'/studentCodes/'+codeKey(r.data.id))):Promise.resolve(null)));chunk.forEach((r,n)=>{const reserved=reservations[n];if(reserved?.exists()&&reserved.data().studentUid!==r.id)throw new Error('Mã võ sinh đã thuộc hồ sơ khác: '+r.data.id);if(!current[n].exists()){tx.set(recordRef(r.kind,r.id),{...r,version:1,updatedAt:serverTimestamp(),imported:true});if(r.kind==='student')tx.set(doc(db,path+'/studentCodes/'+codeKey(r.data.id)),{studentUid:r.id});}})})}
  const done=writeBatch(db);done.set(marker,{status:'ready',hash,source:file.name,counts:normalized.counts,warnings:normalized.warnings,at:serverTimestamp()});const event=doc(collection(db,path+'/audit'));done.set(event,{actor:auditName,actorUid:a.identityId,action:'import',kind:'backup',record_id:'initial',at:serverTimestamp()});await done.commit();return normalized.counts;
 }
 
@@ -220,6 +220,7 @@ export async function resetCurrentStudentBelts(){
 
 export async function updateStudentRecords(){
  const result={codes:0,belts:0,errors:[] as string[]};
+ if((await getDocFromServer(doc(db,path+'/meta/import'))).data()?.status!=='ready')return result;
  // A failed identifier migration must not prevent an independent belt correction.
  try{result.belts=await resetCurrentStudentBelts();}catch(e:any){result.errors.push('Cấp đai: '+e.message);}
  try{result.codes=await standardizeStudentCodes();}catch(e:any){result.errors.push('Mã võ sinh: '+(e.code==='permission-denied'?'Firebase chưa cấp quyền cho tác vụ đổi mã. Cần kiểm tra Firestore Rules.':e.message));}

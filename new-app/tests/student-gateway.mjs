@@ -23,7 +23,7 @@ export function writeBatch(){const tasks=[];return {set:(r,d)=>tasks.push(()=>se
 `;
 const test=`
 import assert from 'node:assert/strict';
-import {mutate,readState,resetCurrentStudentBelts} from './src/gateway';
+import {mutate,readState,resetCurrentStudentBelts,importBackup,updateStudentRecords} from './src/gateway';
 import {ensureStudentCodes} from './src/student-codes';
 import {restoreApp} from './src/recovery';
 import {store,root,transactions,failBeltCursor} from 'test:database';
@@ -69,6 +69,20 @@ assert.equal(JSON.stringify([...store].filter(([k])=>k.includes('/studentCodes/'
 const promoted=store.get(root+'/records/student--A');promoted.data.belt='Lam đai';seed('records/student--A',promoted);
 assert.equal(await resetCurrentStudentBelts(),0);assert.equal(store.get(root+'/records/student--A').data.belt,'Lam đai');
 console.log('PASS: one-time belt correction, interruption/resume, preserved IDs/fields/history, and future promotions/cohorts remain editable.');
+
+
+store.clear();
+seed('members/staff@example.test',{id:'OWNER',email:'staff@example.test',name:'Owner',status:'active',isSuperAdmin:true,allClasses:true,classIds:[],permissions:{}});
+const beforeInit=JSON.stringify([...store]);
+assert.deepEqual(await updateStudentRecords(),{codes:0,belts:0,errors:[]});
+assert.equal(JSON.stringify([...store]),beforeInit,'Fresh project must not initialize code markers before import');
+seed('meta/studentCodes',{ready:true});seed('meta/maintenance',{state:'ready'});
+const backup=JSON.stringify({format:'antruong-v2',records:[{kind:'class',id:'C1',data:{name:'Class'}},student('A','VVN.0001')]});
+const file={name:'migration.json',size:backup.length,text:async()=>backup};
+assert.equal((await importBackup(file)).students,1);
+assert.equal(store.get(root+'/studentCodes/code-vvn.0001').studentUid,'A');
+assert.equal(store.get(root+'/meta/import').status,'ready');
+console.log('PASS: fresh project waits for import; import creates student code reservations even when an old initialization marker exists.');
 
 `;
 await build({stdin:{contents:test,resolveDir:process.cwd(),sourcefile:'student-gateway-test.ts'},bundle:true,format:'esm',platform:'node',outfile:'tests/.student-gateway-built.mjs',plugins:[{name:'memory-firestore',setup(b){b.onResolve({filter:/^(test:database|firebase\/firestore)$/},()=>({path:'database',namespace:'test'}));b.onResolve({filter:/^\.\/firebase$/},()=>({path:'database',namespace:'test'}));b.onLoad({filter:/.*/,namespace:'test'},()=>({contents:database,loader:'js'}))}}]});
