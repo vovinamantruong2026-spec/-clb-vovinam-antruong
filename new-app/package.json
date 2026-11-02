@@ -15,7 +15,8 @@
     "test:students": "esbuild tests/vovinam.mjs --bundle --format=esm --platform=node --outfile=tests/.vovinam-built.mjs && node tests/.vovinam-built.mjs",
     "test:student-policy": "esbuild tests/student-policy.mjs --bundle --format=esm --platform=node --outfile=tests/.student-policy-built.mjs && node tests/.student-policy-built.mjs && node tests/student-gateway.mjs",
     "test:student-files": "node tests/student-duplicates.mjs && node --test functions/student-files.test.js",
-    "build:pages": "npm run build && node scripts/publish-pages.mjs"
+    "build:pages": "npm run build && node scripts/publish-pages.mjs",
+    "test:student-files:ui": "node tests/student-files-ui.mjs"
   },
   "dependencies": {
     "firebase": "^12.0.0",
@@ -30,6 +31,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "playwright": "^1.56.1",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.9.0",
     "vite": "^7.0.0"
