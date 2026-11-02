@@ -42,6 +42,12 @@ assert.deepEqual(results.map(r=>r.record.data.id).sort(),['VVN.0004','VVN.0005']
 assert.equal(store.get(root+'/studentCodes/code-vvn.0002').studentUid,'purged');assert.equal(store.get(root+'/studentCodes/code-vvn.0003').studentUid,'B');
 const highest=results.find(r=>r.record.data.id==='VVN.0005').record;store.delete(root+'/records/student--'+highest.id);await readState();
 const next=await add('E');assert.equal(next.record.data.id,'VVN.0006');
+// A form opened before/after an upload must never remove or replace file links.
+const mediaStudent=store.get(root+'/records/student--A');mediaStudent.data.avatarFile={id:'server-avatar',category:'avatar'};mediaStudent.data.studentFiles=[{id:'server-certificate',category:'certificate'}];seed('records/student--A',mediaStudent);
+await readState();const savedMedia=await mutate({kind:'student',id:'A',version:mediaStudent.version,data:{id:'VVN.0001',name:'Edited name',classId:'C1',avatarFile:{id:'forged'},studentFiles:[]}});
+assert.deepEqual(savedMedia.record.data.avatarFile,mediaStudent.data.avatarFile);assert.deepEqual(savedMedia.record.data.studentFiles,mediaStudent.data.studentFiles);
+await assert.rejects(()=>mutate({kind:'student',id:'A',version:mediaStudent.version,data:{id:'VVN.0001',name:'Stale form',classId:'C1'}}),/máy khác/);
+console.log('PASS: normal edits preserve server-managed avatar/document links and reject stale versions.');
 const owner=store.get(root+'/members/staff@example.test');owner.isSuperAdmin=true;seed('members/staff@example.test',owner);seed('meta/studentCodes',{ready:false});
 await ensureStudentCodes({},root);assert.equal(store.get(root+'/studentCodes/code-vvn.0002').studentUid,'purged');assert.ok(store.has(root+'/studentCodes/code-vvn.0005'));
 await restoreApp({hash:'test-restore',name:'test.json',plan:{rows:[{kind:'class',id:'C1',data:{name:'C1'}},student('A','VVN.0001')],members:null,profiles:null}},()=>{});

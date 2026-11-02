@@ -68,3 +68,9 @@ export const backupTrashAction=onRequest({region,serviceAccount,memory:'512MiB',
   res.status(400).json({error:'Thao tác không hợp lệ.'});
  }catch(e){logger.error('Backup trash operation failed',{code:String(e.code||'unknown')});if(!res.headersSent)res.status(500).json({error:'Chưa xử lý được bản sao. Kiểm tra cấu hình tác vụ Firebase.'});else res.end()}
 });
+
+// Student documents use the existing private bucket in a separate, non-expiring prefix.
+export const studentFiles=onRequest({region,serviceAccount,memory:'512MiB',timeoutSeconds:120,maxInstances:2,concurrency:8,invoker:'public',cors:['https://vovinamantruong2026-spec.github.io']},async(req,res)=>{
+ const {createStudentFilesHandler}=await import('./student-files.js');
+ return createStudentFilesHandler({db:db(),bucket:bucket(),auth:getAuth(),stamp:()=>FieldValue.serverTimestamp(),logError:(...args)=>logger.error(...args)})(req,res);
+});

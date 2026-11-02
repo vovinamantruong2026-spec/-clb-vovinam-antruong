@@ -1,0 +1,5 @@
+// Matching only warns; it never changes IDs, order or student records.
+export function birthYear(value:any){const match=/^(\d{4})(?:-\d{2}-\d{2})?$/.exec(String(value||''));if(!match)return '';const year=Number(match[1]);return year>=1900&&year<=new Date().getFullYear()?match[1]:''}
+export function studentIdentity(data:any){const year=birthYear(data?.dob);const name=String(data?.name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[đĐ]/g,'d').toLowerCase().trim().replace(/\s+/g,' ');return name&&year?name+'|'+year:''}
+export function duplicateStudents(records:any[],data:any,exceptId=''){const key=studentIdentity(data);return key?records.filter(r=>r.kind==='student'&&!r.data.deleted&&r.id!==exceptId&&studentIdentity(r.data)===key):[]}
+export function duplicateStudentIds(records:any[]){const groups=new Map<string,string[]>();for(const r of records){if(r.kind!=='student'||r.data.deleted)continue;const key=studentIdentity(r.data);if(key)groups.set(key,[...(groups.get(key)||[]),r.id])}return new Set([...groups.values()].filter(ids=>ids.length>1).flat())}

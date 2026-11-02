@@ -23,5 +23,5 @@ for CLB_ROLE in roles/datastore.user roles/firebaseauth.viewer; do
 done
 npm --prefix functions ci --omit=dev
 printf 'BACKUP_BUCKET=%s\n' "$CLB_BUCKET" > "functions/.env.${CLB_PROJECT}"
-npx firebase-tools deploy --project "$CLB_PROJECT" --only functions:weeklyClubBackup,functions:cleanupClubBackups,functions:downloadWeeklyBackup,functions:cleanupClubTrash,functions:backupTrashAction
+npx firebase-tools deploy --project "$CLB_PROJECT" --only functions:weeklyClubBackup,functions:cleanupClubBackups,functions:downloadWeeklyBackup,functions:cleanupClubTrash,functions:backupTrashAction,functions:studentFiles
 echo 'Đã triển khai. Trong Cloud Scheduler, chạy Run now tác vụ weeklyClubBackup để kiểm tra bản đầu tiên. Chỉ coi lịch hoạt động khi bản sao và thời điểm thành công xuất hiện trên website.'

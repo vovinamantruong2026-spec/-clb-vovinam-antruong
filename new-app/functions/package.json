@@ -7,7 +7,7 @@
     "node": "22"
   },
   "scripts": {
-    "test": "node --test core.test.js trash-core.test.js history-core.test.js backup-core.test.js"
+    "test": "node --test core.test.js trash-core.test.js history-core.test.js backup-core.test.js student-files.test.js"
   },
   "dependencies": {
     "firebase-admin": "^13.0.0",
