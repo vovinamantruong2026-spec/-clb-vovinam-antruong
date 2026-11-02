@@ -14,7 +14,8 @@
     "test:sync:build": "node tests/sync/build.mjs",
     "test:students": "esbuild tests/vovinam.mjs --bundle --format=esm --platform=node --outfile=tests/.vovinam-built.mjs && node tests/.vovinam-built.mjs",
     "test:student-policy": "esbuild tests/student-policy.mjs --bundle --format=esm --platform=node --outfile=tests/.student-policy-built.mjs && node tests/.student-policy-built.mjs && node tests/student-gateway.mjs",
-    "test:student-files": "node tests/student-duplicates.mjs && node --test functions/student-files.test.js"
+    "test:student-files": "node tests/student-duplicates.mjs && node --test functions/student-files.test.js",
+    "build:pages": "npm run build && node scripts/publish-pages.mjs"
   },
   "dependencies": {
     "firebase": "^12.0.0",
