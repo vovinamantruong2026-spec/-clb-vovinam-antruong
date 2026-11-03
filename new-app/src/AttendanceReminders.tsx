@@ -1,0 +1,11 @@
+import {useEffect,useState} from 'react';
+import {Bell,CheckCircle2} from 'lucide-react';
+import {attendanceReminders} from './attendance-reminders';
+export default function AttendanceReminders({records,actor,onOpen,onEditSchedule}:any){
+ const [now,setNow]=useState(()=>new Date());
+ useEffect(()=>{const refresh=()=>setNow(new Date());const timer=window.setInterval(refresh,30000);window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',refresh);return()=>{window.clearInterval(timer);window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh)}},[]);
+ const {date,due,unknown}=attendanceReminders(records,actor,now),pending=due.filter(r=>r.status!=='done');
+ if(!actor?.isSuperAdmin&&!actor?.permissions?.attendance_manage)return null;
+ if(!due.length&&!unknown.length)return null;
+ return <section className="panel attendance-reminders" aria-label="Nhắc điểm danh hôm nay"><div className="panel-heading"><div><h2><Bell size={19}/>Nhắc điểm danh hôm nay</h2><p aria-live="polite">{date.split('-').reverse().join('/')} · {pending.length?'Còn '+pending.length+' lớp chưa chốt điểm danh':due.length?'Đã chốt tất cả '+due.length+' lớp có lịch hôm nay':'Chưa xác định được lớp có lịch hôm nay'}</p></div></div><div className="reminder-list">{due.map(({record,status})=><div className="reminder-row" key={record.id}><div><strong>{record.data.name}</strong><small>{record.data.time||'Chưa đặt giờ tập'} · {status==='done'?'Đã chốt điểm danh':status==='draft'?'Đã lưu tạm — cần hoàn tất':'Chưa điểm danh'}</small></div>{status==='done'?<span className="badge green"><CheckCircle2 size={14}/>Đã chốt</span>:<button type="button" className="primary" onClick={()=>onOpen(date,record.id)}>{status==='draft'?'Tiếp tục điểm danh':'Điểm danh ngay'}</button>}</div>)}</div>{unknown.length>0&&<div className="reminder-note">{unknown.length} lớp chưa có lịch tập hợp lệ: {unknown.map(c=>c.data.name).join(', ')}.{actor.isSuperAdmin||actor.permissions?.classes_manage?<button type="button" className="text-btn" onClick={onEditSchedule}>Cập nhật lịch lớp</button>:<span> Nhờ chủ CLB cập nhật lịch.</span>}</div>}<p className="personal-hint reminder-note">Nhắc tự động khi mở web, theo ngày Việt Nam. Lưu tạm vẫn được nhắc cho đến khi chốt điểm danh.</p></section>
+}
