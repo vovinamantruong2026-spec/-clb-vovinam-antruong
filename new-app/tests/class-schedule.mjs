@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {parseClassTime,saveClassSchedule} from '../src/class-schedule.ts';
+for(const text of ['17:30 – 19:05','17h30-19h05','17h30 đến 19h05'])assert.deepEqual(parseClassTime(text),{startHour:'17',startMinute:'30',endHour:'19',endMinute:'05'});
+assert.equal(parseClassTime('25:00-27:00'),null);
+const original={name:'Lớp A',days:'Thứ 2, 4, 6',time:'17h-19h',coach:'HLV',fee:100000};
+const saved=saveClassSchedule(original);assert.equal(saved.days,'Thứ 2, Thứ 4, Thứ 6');assert.equal(saved.time,'17:00 – 19:00');assert.equal(saved.coach,'HLV');assert.equal(original.time,'17h-19h');
+assert.equal(saveClassSchedule({...original,days:'CN',_schedule:{startHour:'08',startMinute:'07',endHour:'09',endMinute:'12'}}).time,'08:07 – 09:12');
+assert.equal('_schedule' in saveClassSchedule({...original,_schedule:parseClassTime('08:00-09:00')}),false);
+for(const data of [{days:''},{time:'19:00-18:00'},{time:'17:00-17:00'},{time:'23:00-01:00'},{time:'invalid'}])assert.throws(()=>saveClassSchedule({...original,...data}));
+console.log('PASS: legacy times and weekdays preserved, selected hours/minutes serialized, invalid/reversed/missing schedules rejected, temporary form fields excluded.');
