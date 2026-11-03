@@ -56,7 +56,15 @@ try{
  await assertSucceeds(getDoc(doc(owner,root+'/profiles/staff')));
  await assertSucceeds(setDoc(doc(staff,root+'/profiles/staff'),{...photo,email:'staff@example.test',accountId:'STAFF'}));
  await assertSucceeds(getDocs(collection(owner,root+'/profiles')));
- await assertFails(getDocs(collection(staff,root+'/profiles')));
+ await assertSucceeds(getDocs(collection(staff,root+'/profiles')));
+ const details={...photo,email:'staff@example.test',accountId:'STAFF',fullName:'Nguyễn Văn An',dob:'1995-05-21',phone:'0912345678',belt:'Hoàng đai'};
+ await assertSucceeds(setDoc(doc(staff,root+'/profiles/staff'),details));
+ assert.equal((await getDoc(doc(owner,root+'/profiles/staff'))).data().fullName,details.fullName);
+ await assertFails(getDocs(collection(stranger,root+'/profiles')));
+ await assertFails(setDoc(doc(owner,root+'/profiles/staff'),details));
+ await assertFails(setDoc(doc(staff,root+'/profiles/staff'),{...details,fullName:'x'.repeat(121)}));
+ await assertFails(setDoc(doc(staff,root+'/profiles/staff'),{...details,phone:'<script>'}));
+ await assertFails(setDoc(doc(staff,root+'/profiles/staff'),{...details,dob:'yesterday'}));
  await assertFails(setDoc(doc(staff,root+'/profiles/staff'),{...photo,email:'owner@example.test',accountId:'ADMIN'}));
  await assertFails(setDoc(doc(staff,root+'/profiles/staff'),{...photo,email:'staff@example.test',accountId:'ADMIN'}));
  await assertFails(setDoc(doc(staff,root+'/profiles/staff'),{...photo,email:'staff@example.test'}));

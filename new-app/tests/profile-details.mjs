@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {validateProfileDetails,profileDetails} from '../src/profile-details.ts';
+const sample={fullName:' Nguyễn Văn An ',dob:'2000-02-29',phone:'+84 912 345 678',belt:'Hoàng đai',isSuperAdmin:true};
+assert.deepEqual(validateProfileDetails(sample),{fullName:'Nguyễn Văn An',dob:'2000-02-29',phone:'+84 912 345 678',belt:'Hoàng đai'});
+for(const dob of ['2001-02-29','2020-02-31','2100-01-01','1899-01-01','not-a-date'])assert.throws(()=>validateProfileDetails({...sample,dob}));
+assert.throws(()=>validateProfileDetails({...sample,fullName:' '}));
+assert.throws(()=>validateProfileDetails({...sample,phone:'<script>'}));
+assert.throws(()=>validateProfileDetails({...sample,belt:'x'.repeat(81)}));
+assert.deepEqual(profileDetails({photoURL:'image',email:'private',fullName:'An'}),{fullName:'An',dob:'',phone:'',belt:''});
+console.log('PASS: profile fields exclude account privileges, trim values, validate real calendar dates, phone and length limits.');

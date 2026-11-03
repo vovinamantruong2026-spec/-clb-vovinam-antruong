@@ -96,13 +96,16 @@ service cloud.firestore {
   match /clubs/antruong-v2/backupTrash/{id} { allow read: if owner(); allow write: if false; }
   match /clubs/antruong-v2/weeklyBackups/{id} { allow read: if owner(); allow write: if false; }
   match /clubs/antruong-v2/profiles/{uid} {
-   allow get: if owner() || (active() && request.auth.uid == uid);
-   allow list: if owner();
+   allow get,list: if active();
    allow delete: if restoring();
    allow create,update: if (restoring() || (active() && request.auth.uid == uid)) &&
     request.resource.data.keys().hasAll(['photoURL','updatedAt']) &&
-    request.resource.data.keys().hasOnly(['photoURL','updatedAt','email','accountId']) &&
+    request.resource.data.keys().hasOnly(['photoURL','updatedAt','email','accountId','fullName','dob','phone','belt']) &&
     (restoring() || !request.resource.data.keys().hasAny(['email','accountId']) || (request.resource.data.email == request.auth.token.email.lower() && request.resource.data.accountId == me().id)) &&
+    request.resource.data.get('fullName','') is string && request.resource.data.get('fullName','').size() <= 120 &&
+    request.resource.data.get('dob','') is string && (request.resource.data.get('dob','') == '' || request.resource.data.dob.matches('(19|20)[0-9]{2}-[0-9]{2}-[0-9]{2}')) &&
+    request.resource.data.get('phone','') is string && (request.resource.data.get('phone','') == '' || request.resource.data.phone.matches('[+0-9 ().-]{3,30}')) &&
+    request.resource.data.get('belt','') is string && request.resource.data.get('belt','').size() <= 80 &&
     request.resource.data.photoURL is string && request.resource.data.photoURL.size() <= 180000 &&
     (request.resource.data.photoURL == '' || request.resource.data.photoURL.matches('data:image/jpeg;base64,[A-Za-z0-9+/=]+')) &&
     request.resource.data.updatedAt == request.time;

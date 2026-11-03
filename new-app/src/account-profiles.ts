@@ -13,6 +13,6 @@ export function unlinkedPhotos(accounts:any[],profiles:any[],ownUid:string){retu
 export async function linkOwnProfile(actor:any){
  const user=auth.currentUser;if(!user?.email||user.uid!==actor.identityId)return;
  const email=user.email.toLowerCase(),ref=doc(db,'clubs/'+clubId+'/profiles/'+user.uid);
- await runTransaction(db,async tx=>{const snap=await tx.get(ref),data=snap.data();if(data?.email===email&&data?.accountId===actor.id)return;tx.set(ref,{photoURL:safePhoto(data?.photoURL),email,accountId:actor.id,updatedAt:serverTimestamp()})});
+ await runTransaction(db,async tx=>{const snap=await tx.get(ref),data=snap.data();if(data?.email===email&&data?.accountId===actor.id)return;tx.set(ref,{photoURL:safePhoto(data?.photoURL),email,accountId:actor.id,updatedAt:serverTimestamp()},{merge:true})});
 }
 export function watchAccountProfiles(onProfiles:(profiles:any[])=>void,onError:(e:any)=>void){return onSnapshot(collection(db,'clubs/'+clubId+'/profiles'),snap=>onProfiles(snap.docs.map(d=>({uid:d.id,...d.data(),photoURL:safePhoto(d.data().photoURL)}))),onError)}
